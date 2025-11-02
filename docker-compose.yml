@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # LinkedIn MCP Server
+  linkedin-mcp:
+    image: stickerdaniel/linkedin-mcp-server:latest
+    environment:
+      - LINKEDIN_COOKIE=${LINKEDIN_COOKIE}
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
+  # Playwright MCP Server
+  playwright-mcp:
+    build: ./mcp-playwright
+    ports:
+      - "3000:3000"
+    environment:
+      - HEADLESS=true
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=job_automation
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # n8n Workflow Automation
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=job_automation
+      - DB_POSTGRESDB_USER=admin
+      - DB_POSTGRESDB_PASSWORD=admin123
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  n8n_data:
